@@ -110,36 +110,43 @@ class XdsService:
             routes: list[dict] = []
             all_cors_origins: set[str] = set()
 
+            # Collect (route, app) pairs across ALL apps then sort globally so that
+            # longer prefixes always appear before shorter ones in Envoy's route table
+            # (e.g. /api/v1/auth/users must precede /api/v1/auth).
+            all_route_app_pairs: list[tuple] = []
             for app in tenant_apps:
                 all_cors_origins.update(app.cors_origins or [])
-                for route in sorted(app.route_configs, key=lambda r: -len(r.path_prefix)):
-                    route_entry: dict = {
-                        "match": {"prefix": route.path_prefix},
-                        "route": {
-                            "cluster": f"app_{app.id}",
-                            "timeout": f"{route.timeout_ms / 1000:.3f}s",
-                            "retry_policy": {
-                                "retry_on": "5xx,gateway-error,connect-failure,retriable-4xx",
-                                "num_retries": route.retry_attempts,
-                                "per_try_timeout": f"{route.timeout_ms / 1000:.3f}s",
-                                "retry_back_off": {"base_interval": "0.025s", "max_interval": "1s"},
-                            },
+                for route in app.route_configs:
+                    all_route_app_pairs.append((route, app))
+
+            for route, app in sorted(all_route_app_pairs, key=lambda x: -len(x[0].path_prefix)):
+                route_entry: dict = {
+                    "match": {"prefix": route.path_prefix},
+                    "route": {
+                        "cluster": f"app_{app.id}",
+                        "timeout": f"{route.timeout_ms / 1000:.3f}s",
+                        "retry_policy": {
+                            "retry_on": "5xx,gateway-error,connect-failure,retriable-4xx",
+                            "num_retries": route.retry_attempts,
+                            "per_try_timeout": f"{route.timeout_ms / 1000:.3f}s",
+                            "retry_back_off": {"base_interval": "0.025s", "max_interval": "1s"},
                         },
-                    }
-                    if route.prefix_rewrite:
-                        route_entry["route"]["prefix_rewrite"] = route.prefix_rewrite
-                    if route.headers_to_add:
-                        route_entry["request_headers_to_add"] = [
-                            {"header": {"key": k, "value": v}, "keep_empty_value": False}
-                            for k, v in route.headers_to_add.items()
-                        ]
-                    # Inject tenant + app metadata so upstream services don't need auth re-parse
-                    route_entry.setdefault("request_headers_to_add", []).extend([
-                        {"header": {"key": "x-tenant-id", "value": str(tenant.id)}, "keep_empty_value": False},
-                        {"header": {"key": "x-tenant-slug", "value": tenant.slug}, "keep_empty_value": False},
-                        {"header": {"key": "x-app-id", "value": str(app.id)}, "keep_empty_value": False},
-                    ])
-                    routes.append(route_entry)
+                    },
+                }
+                if route.prefix_rewrite:
+                    route_entry["route"]["prefix_rewrite"] = route.prefix_rewrite
+                if route.headers_to_add:
+                    route_entry["request_headers_to_add"] = [
+                        {"header": {"key": k, "value": v}, "keep_empty_value": False}
+                        for k, v in route.headers_to_add.items()
+                    ]
+                # Inject tenant + app metadata so upstream services don't need auth re-parse
+                route_entry.setdefault("request_headers_to_add", []).extend([
+                    {"header": {"key": "x-tenant-id", "value": str(tenant.id)}, "keep_empty_value": False},
+                    {"header": {"key": "x-tenant-slug", "value": tenant.slug}, "keep_empty_value": False},
+                    {"header": {"key": "x-app-id", "value": str(app.id)}, "keep_empty_value": False},
+                ])
+                routes.append(route_entry)
 
             if not routes:
                 continue

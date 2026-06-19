@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.services.xds_service import XdsService
 
-router = APIRouter(prefix="/xds", tags=["xds"])
+router = APIRouter(tags=["xds"])
 
 _CDS_TYPE = "type.googleapis.com/envoy.config.cluster.v3.Cluster"
 _RDS_TYPE = "type.googleapis.com/envoy.config.route.v3.RouteConfiguration"
@@ -120,7 +120,7 @@ async def listener_discovery(
                                         "rules": [
                                             {"match": {"prefix": "/health"}, "requires": {}},
                                             {"match": {"prefix": "/metrics"}, "requires": {}},
-                                            {"match": {"prefix": "/xds"}, "requires": {}},
+                                            {"match": {"prefix": "/v3/discovery"}, "requires": {}},
                                             {
                                                 "match": {"prefix": "/"},
                                                 "requires": {"provider_name": "clan_jwt"},

@@ -28,3 +28,55 @@ rate_limits:
   default_burst: 20000
 
 metrics_enabled: true
+
+# ---------------------------------------------------------------------------
+# Upstream services registered in the gateway (clan tenant)
+# Run `python gateway-service/scripts/seed_services.py` after first `docker compose up`
+# to populate the database with the entries below.
+# ---------------------------------------------------------------------------
+upstream_services:
+  # clan-identity-be  (docker-compose ports)
+  identity_auth:
+    url: http://host.docker.internal:8001
+    routes: [/api/v1/login, /api/v1/auth/users, /api/v1/sync]
+    jwt_required: false
+
+  identity_user:
+    url: http://host.docker.internal:8002
+    routes: [/api/v1/auth]
+
+  identity_session:
+    url: http://host.docker.internal:8003
+    routes: [/api/v1/sessions]
+
+  identity_rbac:
+    url: http://host.docker.internal:8004
+    routes: [/api/v1/rbac]
+
+  identity_oauth:
+    url: http://host.docker.internal:8005
+    routes: [/api/v1/oauth]
+    jwt_required: false
+
+  # clan-platform-domain-be  (admin-service)
+  # NOTE: admin-service defaults to host port 8000, which conflicts with this
+  # gateway's own port.  Remap it in platform-domain-be's docker-compose:
+  #   ports: ["8010:8000"]
+  platform_admin:
+    url: http://host.docker.internal:8010
+    routes:
+      - /api/v1/user_role_form_permission
+      - /api/v1/menus_language
+      - /api/v1/forms_language
+      - /api/v1/user_setup
+      - /api/v1/user_role
+      - /api/v1/departments
+      - /api/v1/applications
+      - /api/v1/job_codes
+      - /api/v1/divisions
+      - /api/v1/domains
+      - /api/v1/modules
+      - /api/v1/clients
+      - /api/v1/entity
+      - /api/v1/menus
+      - /api/v1/forms
