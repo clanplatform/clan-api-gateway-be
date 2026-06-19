@@ -1,0 +1,44 @@
+# JWT authentication filter fragment.
+# This is embedded in the LDS listener response by xds/server.py.
+# Kept here as documentation / local override reference.
+name: envoy.filters.http.jwt_authn
+typed_config:
+  "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.JwtAuthentication
+  providers:
+    clan_jwt:
+      issuer: https://auth.example.com
+      audiences:
+        - api-gateway
+      remote_jwks:
+        http_uri:
+          uri: https://auth.example.com/.well-known/jwks.json
+          cluster: jwks_cluster
+          timeout: 5s
+        cache_duration: 300s
+        async_fetch:
+          fast_listener: true
+      forward: true
+      payload_in_metadata: jwt_payload
+      claim_to_headers:
+        - header_name: x-tenant-id
+          claim_name: tenant_id
+        - header_name: x-user-id
+          claim_name: sub
+        - header_name: x-app-id
+          claim_name: app_id
+  rules:
+    # Public paths — no JWT required
+    - match:
+        prefix: /health
+      requires: {}
+    - match:
+        prefix: /metrics
+      requires: {}
+    - match:
+        prefix: /xds
+      requires: {}
+    # Everything else requires a valid clan_jwt token
+    - match:
+        prefix: /
+      requires:
+        provider_name: clan_jwt

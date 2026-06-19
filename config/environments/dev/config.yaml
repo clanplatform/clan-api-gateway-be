@@ -1,0 +1,30 @@
+environment: development
+debug: true
+log_level: DEBUG
+
+database:
+  url: postgresql+asyncpg://postgres:postgres@localhost:5432/api_gateway_dev
+  pool_size: 5
+  max_overflow: 10
+
+redis:
+  url: redis://localhost:6379/0
+
+gateway:
+  domain: api.localhost
+  envoy_admin_url: http://localhost:9901
+  jwks_uri: http://localhost:8080/.well-known/jwks.json
+  jwt_algorithm: HS256
+  jwt_secret_key: dev-secret-key-minimum-32-chars!!
+  jwt_access_token_expire_minutes: 1440
+
+envoy:
+  cds_refresh_delay: 5s
+  lds_refresh_delay: 10s
+  rds_refresh_delay: 3s
+
+rate_limits:
+  default_rps: 10000
+  default_burst: 20000
+
+metrics_enabled: true

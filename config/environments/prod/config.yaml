@@ -1,0 +1,33 @@
+environment: production
+debug: false
+log_level: WARNING
+
+database:
+  url: "${DATABASE_URL}"
+  pool_size: 20
+  max_overflow: 40
+
+redis:
+  url: "${REDIS_URL}"
+
+gateway:
+  domain: api.example.com
+  envoy_admin_url: http://envoy:9901
+  jwks_uri: https://auth.example.com/.well-known/jwks.json
+  jwt_algorithm: RS256
+  jwt_public_key_path: /etc/gateway/jwt/public.pem
+  jwt_private_key_path: /etc/gateway/jwt/private.pem
+  jwt_issuer: https://auth.example.com
+  jwt_audience: api-gateway
+  jwt_access_token_expire_minutes: 60
+
+envoy:
+  cds_refresh_delay: 10s
+  lds_refresh_delay: 30s
+  rds_refresh_delay: 5s
+
+rate_limits:
+  default_rps: 100
+  default_burst: 200
+
+metrics_enabled: true

@@ -1,0 +1,68 @@
+# envoy-render.yaml — Template with ${VAR:-default} substitutions.
+# Run through envsubst before passing to Envoy:
+#   envsubst < envoy-render.yaml > /etc/envoy/envoy.yaml
+admin:
+  address:
+    socket_address:
+      address: 0.0.0.0
+      port_value: ${ENVOY_ADMIN_PORT:-9901}
+
+static_resources:
+  clusters:
+    - name: gateway_service
+      connect_timeout: ${GATEWAY_CONNECT_TIMEOUT:-5s}
+      type: STRICT_DNS
+      dns_lookup_family: V4_ONLY
+      load_assignment:
+        cluster_name: gateway_service
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: ${GATEWAY_SERVICE_HOST:-gateway-service}
+                      port_value: ${GATEWAY_SERVICE_PORT:-8000}
+      health_checks:
+        - timeout: 2s
+          interval: 10s
+          unhealthy_threshold: 3
+          healthy_threshold: 2
+          http_health_check:
+            path: /health/live
+
+    - name: jwks_cluster
+      connect_timeout: 5s
+      type: LOGICAL_DNS
+      dns_lookup_family: V4_ONLY
+      load_assignment:
+        cluster_name: jwks_cluster
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: ${JWKS_HOST:-auth.example.com}
+                      port_value: ${JWKS_PORT:-443}
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+          sni: ${JWKS_HOST:-auth.example.com}
+
+dynamic_resources:
+  cds_config:
+    api_config_source:
+      api_type: REST
+      transport_api_version: V3
+      cluster_names:
+        - gateway_service
+      refresh_delay: ${CDS_REFRESH_DELAY:-10s}
+    resource_api_version: V3
+  lds_config:
+    api_config_source:
+      api_type: REST
+      transport_api_version: V3
+      cluster_names:
+        - gateway_service
+      refresh_delay: ${LDS_REFRESH_DELAY:-30s}
+    resource_api_version: V3

@@ -1,0 +1,31 @@
+environment: uat
+debug: false
+log_level: INFO
+
+database:
+  url: "${DATABASE_URL}"
+  pool_size: 10
+  max_overflow: 20
+
+redis:
+  url: "${REDIS_URL}"
+
+gateway:
+  domain: api-uat.example.com
+  envoy_admin_url: http://envoy:9901
+  jwks_uri: https://auth-uat.example.com/.well-known/jwks.json
+  jwt_algorithm: RS256
+  jwt_public_key_path: /etc/gateway/jwt/public.pem
+  jwt_private_key_path: /etc/gateway/jwt/private.pem
+  jwt_access_token_expire_minutes: 60
+
+envoy:
+  cds_refresh_delay: 10s
+  lds_refresh_delay: 30s
+  rds_refresh_delay: 5s
+
+rate_limits:
+  default_rps: 500
+  default_burst: 1000
+
+metrics_enabled: true

@@ -1,0 +1,75 @@
+admin:
+  address:
+    socket_address:
+      address: 0.0.0.0
+      port_value: 9901
+  access_log:
+    - name: envoy.access_loggers.stdout
+      typed_config:
+        "@type": type.googleapis.com/envoy.extensions.access_loggers.stream.v3.StdoutAccessLog
+
+# Static resources needed before dynamic config is fetched:
+#   1. gateway_service — the FastAPI control plane (xDS server)
+#   2. jwks_cluster    — remote JWKS endpoint for JWT validation
+static_resources:
+  clusters:
+    - name: gateway_service
+      connect_timeout: 5s
+      type: STRICT_DNS
+      dns_lookup_family: V4_ONLY
+      load_assignment:
+        cluster_name: gateway_service
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: gateway-service
+                      port_value: 8000
+      health_checks:
+        - timeout: 2s
+          interval: 10s
+          unhealthy_threshold: 3
+          healthy_threshold: 2
+          http_health_check:
+            path: /health/live
+
+    - name: jwks_cluster
+      connect_timeout: 5s
+      type: LOGICAL_DNS
+      dns_lookup_family: V4_ONLY
+      load_assignment:
+        cluster_name: jwks_cluster
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: auth.example.com
+                      port_value: 443
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+          sni: auth.example.com
+
+# Dynamic resources — fetched from gateway_service REST xDS endpoints.
+# Envoy polls CDS (clusters) and LDS (listeners) independently.
+# LDS in turn drives RDS (routes) via the embedded rds config_source.
+dynamic_resources:
+  cds_config:
+    api_config_source:
+      api_type: REST
+      transport_api_version: V3
+      cluster_names:
+        - gateway_service
+      refresh_delay: 10s
+    resource_api_version: V3
+  lds_config:
+    api_config_source:
+      api_type: REST
+      transport_api_version: V3
+      cluster_names:
+        - gateway_service
+      refresh_delay: 30s
+    resource_api_version: V3

@@ -1,0 +1,6 @@
+# CORS filter — per-tenant CORS policy is configured in the virtual host
+# via the cors field in xds_service.build_route_config().
+# This enables the filter at the listener level.
+name: envoy.filters.http.cors
+typed_config:
+  "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.Cors

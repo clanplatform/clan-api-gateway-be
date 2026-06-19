@@ -1,0 +1,29 @@
+# Local rate-limit filter — gateway-wide token bucket (50k RPS total).
+# Per-tenant limits are enforced via virtual-host rate_limits actions in RDS.
+name: envoy.filters.http.local_ratelimit
+typed_config:
+  "@type": type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
+  stat_prefix: local_rate_limiter
+  token_bucket:
+    max_tokens: 50000
+    tokens_per_fill: 50000
+    fill_interval: 1s
+  filter_enabled:
+    runtime_key: local_rate_limit_enabled
+    default_value:
+      numerator: 100
+      denominator: HUNDRED
+  filter_enforced:
+    runtime_key: local_rate_limit_enforced
+    default_value:
+      numerator: 100
+      denominator: HUNDRED
+  response_headers_to_add:
+    - header:
+        key: x-ratelimit-limit
+        value: "50000"
+      keep_empty_value: false
+    - header:
+        key: x-ratelimit-reset
+        value: "1"
+      keep_empty_value: false

@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-config
+  namespace: clan-gateway
+  labels:
+    app: gateway-service
+data:
+  ENVIRONMENT: "production"
+  DEBUG: "false"
+  LOG_LEVEL: "WARNING"
+  DATABASE_POOL_SIZE: "20"
+  DATABASE_MAX_OVERFLOW: "40"
+  METRICS_ENABLED: "true"
+  XDS_TRANSPORT_API_VERSION: "V3"
+  CDS_REFRESH_DELAY: "10s"
+  LDS_REFRESH_DELAY: "30s"
+  RDS_REFRESH_DELAY: "5s"
+  DEFAULT_RATE_LIMIT_RPS: "100"
+  DEFAULT_RATE_LIMIT_BURST: "200"
+  JWT_ALGORITHM: "RS256"
+  JWT_ISSUER: "https://auth.example.com"
+  JWT_AUDIENCE: "api-gateway"
+  JWKS_URI: "https://auth.example.com/.well-known/jwks.json"
+  JWKS_CLUSTER: "jwks_cluster"
+  GATEWAY_DOMAIN: "api.example.com"
+  ENVOY_ADMIN_URL: "http://envoy:9901"
