@@ -36,7 +36,7 @@ static_resources:
 
     - name: jwks_cluster
       connect_timeout: 5s
-      type: LOGICAL_DNS
+      type: STRICT_DNS
       dns_lookup_family: V4_ONLY
       load_assignment:
         cluster_name: jwks_cluster
@@ -45,13 +45,9 @@ static_resources:
               - endpoint:
                   address:
                     socket_address:
-                      address: auth.example.com
-                      port_value: 443
-      transport_socket:
-        name: envoy.transport_sockets.tls
-        typed_config:
-          "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
-          sni: auth.example.com
+                      # auth-service reachable by container name via clan-network.
+                      address: clan-auth-service
+                      port_value: 8000
 
 # Dynamic resources — fetched from gateway_service REST xDS endpoints.
 # Envoy polls CDS (clusters) and LDS (listeners) independently.

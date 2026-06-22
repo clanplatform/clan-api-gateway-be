@@ -23,9 +23,10 @@ async def cluster_discovery(
 ) -> dict:
     svc = XdsService(db)
     version = XdsService.current_version()
-    # Return empty resources (304-equivalent) when Envoy already has this version
-    if body.get("version_info") == version:
-        return {"version_info": version, "resources": [], "type_url": _CDS_TYPE, "nonce": version}
+    # SotW (State-of-the-World) xDS: always return the FULL resource set. Returning
+    # an empty list when version_info matches would tell Envoy "the set is now empty"
+    # → it deletes every cluster. Envoy de-dupes by version_info, so re-sending the
+    # same full set is idempotent and cheap.
     clusters = await svc.build_clusters()
     return {"version_info": version, "resources": clusters, "type_url": _CDS_TYPE, "nonce": version}
 
@@ -37,8 +38,7 @@ async def route_discovery(
 ) -> dict:
     svc = XdsService(db)
     version = XdsService.current_version()
-    if body.get("version_info") == version:
-        return {"version_info": version, "resources": [], "type_url": _RDS_TYPE, "nonce": version}
+    # SotW xDS: always return the full route config (see cluster_discovery note).
     route_config = await svc.build_route_config()
     return {
         "version_info": version,
@@ -57,8 +57,7 @@ async def listener_discovery(
     settings = get_settings()
 
     version = XdsService.current_version()
-    if body.get("version_info") == version:
-        return {"version_info": version, "resources": [], "type_url": _LDS_TYPE, "nonce": version}
+    # SotW xDS: always return the full listener (see cluster_discovery note).
 
     listener = {
         "@type": _LDS_TYPE,
@@ -121,6 +120,13 @@ async def listener_discovery(
                                             {"match": {"prefix": "/health"}, "requires": {}},
                                             {"match": {"prefix": "/metrics"}, "requires": {}},
                                             {"match": {"prefix": "/v3/discovery"}, "requires": {}},
+                                            # JWKS endpoint fetched by Envoy — must be public
+                                            {"match": {"prefix": "/.well-known"}, "requires": {}},
+                                            # Logout needs a valid token; must come before the
+                                            # broader /api/v1/login rule below
+                                            {"match": {"prefix": "/api/v1/login/logout"}, "requires": {"provider_name": "clan_jwt"}},
+                                            # Login, change-password, refresh — no token yet
+                                            {"match": {"prefix": "/api/v1/login"}, "requires": {}},
                                             {
                                                 "match": {"prefix": "/"},
                                                 "requires": {"provider_name": "clan_jwt"},

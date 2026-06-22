@@ -1,0 +1,31 @@
+environment: development
+debug: true
+log_level: DEBUG
+
+database:
+  url: "postgresql+asyncpg://postgres:root@localhost:5437/api_gateway"
+  pool_size: 5
+  max_overflow: 10
+
+redis:
+  url: "redis://localhost:6383/0"
+
+gateway:
+  domain: api.localhost
+  envoy_admin_url: http://localhost:9901
+  jwks_uri: http://localhost:8001/.well-known/jwks.json
+  jwt_algorithm: RS256
+  jwt_issuer: clan-identity
+  jwt_audience: api-gateway
+  jwt_access_token_expire_minutes: 60
+
+envoy:
+  cds_refresh_delay: 10s
+  lds_refresh_delay: 30s
+  rds_refresh_delay: 5s
+
+rate_limits:
+  default_rps: 100
+  default_burst: 200
+
+metrics_enabled: true

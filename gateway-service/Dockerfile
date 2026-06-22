@@ -12,6 +12,8 @@ RUN pip install --prefix=/install -r requirements.txt
 FROM base AS runtime
 COPY --from=builder /install /usr/local
 COPY app/ ./app/
+COPY alembic/ ./alembic/
+COPY alembic.ini .
 RUN useradd -r -s /bin/false gateway
 USER gateway
 EXPOSE 8000
