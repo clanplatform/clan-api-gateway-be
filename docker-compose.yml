@@ -19,7 +19,7 @@ services:
     image: redis:7-alpine
     command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --save ""
     ports:
-      - "6383:6379"
+      - "6384:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -44,6 +44,7 @@ services:
       # auth-service is reachable by container name via the shared clan-network.
       JWKS_URI: http://clan-auth-service:8000/.well-known/jwks.json
       GATEWAY_DOMAIN: api.localhost
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-internal-secret-key}
     ports:
       - "8010:8000"
     depends_on:

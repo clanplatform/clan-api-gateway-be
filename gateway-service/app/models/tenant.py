@@ -9,6 +9,8 @@ class Tenant(Base):
     __tablename__ = "tenants"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    # admin_tenant_id mirrors tenants.tenant_id from clan-platform-domain-be (no real DB FK — cross-service)
+    admin_tenant_id: Mapped[uuid.UUID | None] = mapped_column(nullable=True, unique=True, index=True)
     slug: Mapped[str] = mapped_column(String(63), unique=True, nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     plan: Mapped[str] = mapped_column(String(50), default="starter")

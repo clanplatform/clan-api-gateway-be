@@ -8,7 +8,7 @@ database:
   max_overflow: 10
 
 redis:
-  url: "redis://localhost:6383/0"
+  url: "redis://localhost:6384/0"
 
 gateway:
   domain: api.localhost

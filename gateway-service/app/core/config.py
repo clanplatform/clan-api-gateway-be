@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     default_rate_limit_rps: int = 100
     default_rate_limit_burst: int = 200
 
+    # Internal sync key — clan-platform-domain-be sends this when calling /sync/*
+    internal_api_key: str = "internal-secret-key"
+
     # Observability
     metrics_enabled: bool = True
     log_level: str = "INFO"

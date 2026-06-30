@@ -121,7 +121,7 @@ SERVICES = [
             "/api/v1/divisions",
             "/api/v1/domains",
             "/api/v1/modules",
-            "/api/v1/clients",
+            "/api/v1/tenants",
             "/api/v1/entity",
             "/api/v1/menus",
             "/api/v1/forms",

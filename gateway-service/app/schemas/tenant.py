@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Optional
 from pydantic import BaseModel, Field
 
 
@@ -17,8 +18,22 @@ class TenantUpdate(BaseModel):
     metadata: dict | None = None
 
 
+class TenantSyncPayload(BaseModel):
+    """
+    Payload sent by clan-platform-domain-be when a tenant is created/updated.
+    tenant_id   — tenants.tenant_id PK from platform-domain (cross-service link).
+    tenant_code — used as the slug for Envoy routing.
+    """
+    tenant_id:         uuid.UUID
+    tenant_name:       str
+    tenant_code:       Optional[str] = None
+    subscription_plan: Optional[str] = None
+    is_active:         bool = True
+
+
 class TenantResponse(BaseModel):
     id: uuid.UUID
+    admin_tenant_id: Optional[uuid.UUID]
     slug: str
     name: str
     plan: str
@@ -33,6 +48,7 @@ class TenantResponse(BaseModel):
     def from_model(cls, obj) -> "TenantResponse":
         return cls(
             id=obj.id,
+            admin_tenant_id=obj.admin_tenant_id,
             slug=obj.slug,
             name=obj.name,
             plan=obj.plan,
