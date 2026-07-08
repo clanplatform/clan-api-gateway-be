@@ -1,17 +1,18 @@
-# JWT authentication filter fragment.
-# This is embedded in the LDS listener response by xds/server.py.
-# Kept here as documentation / local override reference.
+# JWT authentication filter fragment — REFERENCE ONLY.
+# The live filter is built programmatically in xds/server.py from settings
+# (jwt_issuer / jwt_audience / jwks_uri), NOT from this file. Values below are
+# kept aligned with the clan-identity auth-service purely as documentation.
 name: envoy.filters.http.jwt_authn
 typed_config:
   "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.JwtAuthentication
   providers:
     clan_jwt:
-      issuer: https://auth.example.com
+      issuer: clan-identity
       audiences:
         - api-gateway
       remote_jwks:
         http_uri:
-          uri: https://auth.example.com/.well-known/jwks.json
+          uri: http://clan-auth-service:8000/.well-known/jwks.json
           cluster: jwks_cluster
           timeout: 5s
         cache_duration: 300s

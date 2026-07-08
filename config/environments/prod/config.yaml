@@ -13,11 +13,15 @@ redis:
 gateway:
   domain: api.example.com
   envoy_admin_url: http://envoy:9901
-  jwks_uri: https://auth.example.com/.well-known/jwks.json
+  # jwt_issuer / jwt_audience are logical identifiers and MUST match what the
+  # clan-identity auth-service issues (its JWT_ISSUER / JWT_AUDIENCE). jwks_uri
+  # must resolve to that service's public JWKS endpoint in the prod network.
+  # At runtime these are read from env vars (JWKS_URI / JWT_ISSUER / JWT_AUDIENCE).
+  jwks_uri: https://<identity-service-host>/.well-known/jwks.json
   jwt_algorithm: RS256
   jwt_public_key_path: /etc/gateway/jwt/public.pem
   jwt_private_key_path: /etc/gateway/jwt/private.pem
-  jwt_issuer: https://auth.example.com
+  jwt_issuer: clan-identity
   jwt_audience: api-gateway
   jwt_access_token_expire_minutes: 60
 
