@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,6 +16,22 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/api_gateway"
     database_pool_size: int = 20
     database_max_overflow: int = 40
+
+    @field_validator("database_url")
+    @classmethod
+    def _use_asyncpg_driver(cls, v: str) -> str:
+        """
+        SQLAlchemy async needs the asyncpg driver. Render's Internal Database URL
+        is a bare `postgresql://...`, which SQLAlchemy maps to psycopg2 (not
+        installed here) — normalize it to `postgresql+asyncpg://...` so the
+        connection string works as pasted.
+        """
+        if v.startswith("postgresql+"):
+            return v
+        for prefix in ("postgresql://", "postgres://"):
+            if v.startswith(prefix):
+                return "postgresql+asyncpg://" + v[len(prefix):]
+        return v
 
     # Redis
     redis_url: str = "redis://localhost:6379/0"
