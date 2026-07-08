@@ -1,0 +1,74 @@
+# ================================================================
+# Render Blueprint — clan-api-gateway-be (gateway-service)
+# Deploys the FastAPI gateway-service: tenant/application registry,
+# Envoy xDS control plane, and the internal /api/v1/sync endpoints
+# that clan-platform-domain-be (admin-service) pushes tenants to.
+# Docs: https://render.com/docs/blueprint-spec
+#
+# NOTE: This deploys the CONTROL PLANE (gateway-service) only. The Envoy
+# DATA PLANE (Dockerfile.envoy, ports 8080/8443) is a separate deploy —
+# stand it up once gateway-service and the identity JWKS are reachable,
+# pointing its JWKS_HOST/JWKS_PORT at the identity auth-service.
+# ================================================================
+
+databases:
+  - name: clan-gateway-db
+    databaseName: api_gateway
+    user: gateway
+    plan: starter
+    region: singapore
+
+services:
+  # ── Redis ──────────────────────────────────────────────────────
+  - type: redis
+    name: clan-gateway-redis
+    plan: starter
+    region: singapore
+    maxmemoryPolicy: allkeys-lru
+
+  # ── Gateway control-plane service ──────────────────────────────
+  - type: web
+    name: clan-gateway-service
+    env: docker
+    region: singapore
+    plan: starter
+    dockerfilePath: ./gateway-service/Dockerfile
+    dockerContext: ./gateway-service
+    healthCheckPath: /api/v1/health/ready
+    # Create/upgrade the schema before the new version goes live (async alembic).
+    preDeployCommand: alembic upgrade head
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "false"
+
+      # DATABASE_URL — the app uses SQLAlchemy async, so it needs the asyncpg
+      # driver. Paste clan-gateway-db's Internal Database URL and change the
+      # scheme to:  postgresql+asyncpg://user:pass@host/db
+      - key: DATABASE_URL
+        sync: false
+
+      # Redis — the redis:// connection string is used as-is.
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: clan-gateway-redis
+          property: connectionString
+
+      # JWT — MUST match what the clan-identity auth-service issues.
+      - key: JWT_ALGORITHM
+        value: RS256
+      - key: JWT_ISSUER
+        value: clan-identity
+      - key: JWT_AUDIENCE
+        value: api-gateway
+      # JWKS endpoint of the deployed identity auth-service, e.g.
+      #   https://clan-auth-service-prod.onrender.com/.well-known/jwks.json
+      - key: JWKS_URI
+        sync: false
+
+      # Shared internal key — MUST equal admin-service's INTERNAL_API_KEY so the
+      # platform-domain → gateway tenant sync (POST /api/v1/sync/tenants) authenticates.
+      - key: INTERNAL_API_KEY
+        sync: false
