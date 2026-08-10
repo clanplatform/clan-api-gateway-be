@@ -1,19 +1,6 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: root
-      POSTGRES_DB: api_gateway
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5437:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+  # No local postgres container — all repos share one Postgres server
+  # (admin-service-postgres, published on host port 5432, db clan_platform).
 
   redis:
     image: redis:7-alpine
@@ -31,7 +18,7 @@ services:
       context: gateway-service
       dockerfile: Dockerfile
     environment:
-      DATABASE_URL: postgresql+asyncpg://postgres:root@postgres:5432/api_gateway
+      DATABASE_URL: postgresql+asyncpg://postgres:root@host.docker.internal:5432/clan_platform
       REDIS_URL: redis://redis:6379/0
       SECRET_KEY: dev-secret-key-minimum-32-chars!!
       ENVIRONMENT: development
@@ -48,8 +35,6 @@ services:
     ports:
       - "8010:8000"
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
@@ -85,9 +70,6 @@ services:
     # host.docker.internal kept for admin-service and other host-based services.
     extra_hosts:
       - "host.docker.internal:host-gateway"
-
-volumes:
-  postgres_data:
 
 networks:
   default:

@@ -6,7 +6,7 @@ from app.core.database import Base
 
 
 class Tenant(Base):
-    __tablename__ = "tenants"
+    __tablename__ = "gateway_tenants"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     # admin_tenant_id mirrors tenants.tenant_id from clan-platform-domain-be (no real DB FK — cross-service)

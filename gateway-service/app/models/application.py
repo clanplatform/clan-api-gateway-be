@@ -6,12 +6,12 @@ from app.core.database import Base
 
 
 class Application(Base):
-    __tablename__ = "applications"
+    __tablename__ = "gateway_applications"
     __table_args__ = (UniqueConstraint("tenant_id", "slug", name="uq_app_tenant_slug"),)
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     tenant_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+        ForeignKey("gateway_tenants.id", ondelete="CASCADE"), nullable=False, index=True
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     slug: Mapped[str] = mapped_column(String(63), nullable=False)

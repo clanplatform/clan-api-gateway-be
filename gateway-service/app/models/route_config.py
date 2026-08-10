@@ -10,7 +10,7 @@ class RouteConfig(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     application_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("applications.id", ondelete="CASCADE"), nullable=False, index=True
+        ForeignKey("gateway_applications.id", ondelete="CASCADE"), nullable=False, index=True
     )
     path_prefix: Mapped[str] = mapped_column(String(512), nullable=False)
     methods: Mapped[list] = mapped_column(

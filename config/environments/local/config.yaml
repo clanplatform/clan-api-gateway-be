@@ -3,7 +3,7 @@ debug: true
 log_level: DEBUG
 
 database:
-  url: "postgresql+asyncpg://postgres:root@localhost:5437/api_gateway"
+  url: "postgresql+asyncpg://postgres:root@localhost:5432/clan_platform"
   pool_size: 5
   max_overflow: 10
 
